@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala de Folga</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f6f8fa;
+    text-align: center;
+    padding: 30px;
+  }
+  h1 {
+    color: #333;
+  }
+  input {
+    margin: 20px;
+    padding: 10px;
+    font-size: 16px;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+  .resultado {
+    margin-top: 25px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>Escala de Trabalho</h1>
+<p>Selecione uma data para saber se é folga ou trabalho:</p>
+
+<input type="date" id="data">
+<button onclick="verificarEscala()">Verificar</button>
+
+<div class="resultado" id="resultado"></div>
+
+<script>
+const inicioCiclo = new Date("2025-11-02"); // início da semana 1 (domingo)
+
+// Escalas das 4 semanas
+const escalas = [
+  // Semana 1
+  {dom:1, seg:0, ter:1, qua:0, qui:1, sex:1, sab:0},
+  // Semana 2
+  {dom:0, seg:1, ter:0, qua:1, qui:0, sex:0, sab:1},
+  // Semana 3 (igual semana 1)
+  {dom:1, seg:0, ter:1, qua:0, qui:1, sex:1, sab:0},
+  // Semana 4 (igual semana 2)
+  {dom:0, seg:1, ter:0, qua:1, qui:0, sex:0, sab:1}
+];
+
+function verificarEscala() {
+  const input = document.getElementById("data").value;
+  if (!input) {
+    alert("Selecione uma data!");
+    return;
+  }
+  const data = new Date(input + "T00:00:00");
+  const diffDias = Math.floor((data - inicioCiclo) / (1000 * 60 * 60 * 24));
+  const indiceSemana = ((Math.floor(diffDias / 7)) % 4 + 4) % 4;
+  const semana = escalas[indiceSemana];
+  const diaSemana = data.getDay(); // 0=dom,1=seg,2=ter,3=qua,4=qui,5=sex,6=sab
+  const nomesDias = ["dom","seg","ter","qua","qui","sex","sab"];
+  const trabalha = semana[nomesDias[diaSemana]];
+
+  const res = document.getElementById("resultado");
+  if (trabalha) {
+    res.textContent = "💼 Você TRABALHA neste dia.";
+    res.style.color = "#d9534f";
+  } else {
+    res.textContent = "🎉 Você está de FOLGA!";
+    res.style.color = "#28a745";
+  }
+}
+</script>
+</body>
+</html>
