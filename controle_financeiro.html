@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Controle Financeiro Mensal</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { margin-top: 30px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; }
+    input, select, button { padding: 6px; margin: 4px; }
+    .resumo { background: #f9f9f9; padding: 10px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<h1>Controle Financeiro Mensal</h1>
+
+<label>Mês/Ano:
+  <input type="month" id="mesAno">
+</label>
+<button onclick="carregarMes()">Carregar</button>
+
+<h2>Receitas</h2>
+<input type="text" id="fonteReceita" placeholder="Fonte da renda">
+<input type="number" id="valorReceita" placeholder="Valor recebido">
+<button onclick="adicionarReceita()">Adicionar Receita</button>
+
+<table id="tabelaReceitas">
+  <thead>
+    <tr><th>Fonte</th><th>Valor (R$)</th><th>Ações</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>Gastos</h2>
+<select id="tipoGasto">
+  <option value="fixo">Custo Fixo</option>
+  <option value="variavel">Custo Variável</option>
+</select>
+<input type="text" id="nomeGasto" placeholder="Descrição">
+<input type="number" id="valorGasto" placeholder="Valor">
+<button onclick="adicionarGasto()">Adicionar</button>
+
+<table id="tabelaGastos">
+  <thead>
+    <tr>
+      <th>Tipo</th><th>Descrição</th><th>Valor (R$)</th><th>Ações</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>Investimentos</h2>
+<input type="text" id="nomeInvest" placeholder="Tipo do investimento">
+<input type="text" id="localInvest" placeholder="Onde está aplicado">
+<input type="number" id="valorInvest" placeholder="Valor investido">
+<input type="number" id="percInvest" placeholder="% ao mês">
+<button onclick="adicionarInvestimento()">Adicionar</button>
+
+<table id="tabelaInvest">
+  <thead>
+    <tr>
+      <th>Investimento</th><th>Local</th><th>Valor (R$)</th><th>% Mês</th><th>Ganho Estimado (R$)</th><th>Ações</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div class="resumo" id="resumoMes"></div>
+<canvas id="graficoGastos"></canvas>
+<canvas id="graficoInvest"></canvas>
+<div class="resumo" id="resumoAno"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let dados = JSON.parse(localStorage.getItem('financas')) || {};
+let mesAtual = null;
+
+function carregarMes() {
+  mesAtual = document.getElementById('mesAno').value;
+  if (!mesAtual) {
+    alert('Selecione o mês');
+    return;
+  }
+
+  if (!dados[mesAtual]) {
+    dados[mesAtual] = {
+      receitas: [],
+      gastos: [],
+      investimentos: []
+    };
+  }
+
+  salvar();
+  render();
+}
+
+function adicionarReceita() {
+  dados[mesAtual].receitas.push({ fonte: fonteReceita.value, valor: Number(valorReceita.value) });
+  salvar(); render();
+}
+
+function adicionarGasto() {
+  dados[mesAtual].gastos.push({
+    tipo: tipoGasto.value,
+    nome: nomeGasto.value,
+    valor: Number(valorGasto.value)
+  });
+  salvar(); render();
+}
+
+function adicionarInvestimento() {
+  dados[mesAtual].investimentos.push({
+    nome: nomeInvest.value,
+    local: localInvest.value,
+    valor: Number(valorInvest.value),
+    perc: Number(percInvest.value)
+  });
+  salvar(); render();
+}
+
+function render() {
+  if (!dados[mesAtual]) return;
+  if (!dados[mesAtual].receitas) dados[mesAtual].receitas = [];
+  if (!dados[mesAtual].gastos) dados[mesAtual].gastos = [];
+  if (!dados[mesAtual].investimentos) dados[mesAtual].investimentos = [];
+
+  const tr = document.querySelector('#tabelaReceitas tbody');
+  tr.innerHTML = '';
+  let totalReceitas = 0;
+  dados[mesAtual].receitas.forEach(r => {
+    totalReceitas += r.valor;
+    tr.innerHTML += `<tr><td>${r.fonte}</td><td>${r.valor.toFixed(2)}</td><td><button onclick="editarReceita(${dados[mesAtual].receitas.indexOf(r)})">Editar</button> <button onclick="excluirReceita(${dados[mesAtual].receitas.indexOf(r)})">Excluir</button></td></tr>`;
+  });
+
+  const tg = document.querySelector('#tabelaGastos tbody');
+  tg.innerHTML = '';
+  let totalGastos = 0;
+  dados[mesAtual].gastos.forEach(g => {
+    totalGastos += g.valor;
+    tg.innerHTML += `<tr><td>${g.tipo}</td><td>${g.nome}</td><td>${g.valor.toFixed(2)}</td><td><button onclick="editarGasto(${dados[mesAtual].gastos.indexOf(g)})">Editar</button> <button onclick="excluirGasto(${dados[mesAtual].gastos.indexOf(g)})">Excluir</button></td></tr>`;
+  });
+
+  const ti = document.querySelector('#tabelaInvest tbody');
+  ti.innerHTML = '';
+  let totalGanhos = 0;
+  dados[mesAtual].investimentos.forEach(i => {
+    const ganho = i.valor * (i.perc / 100);
+    totalGanhos += ganho;
+    ti.innerHTML += `<tr><td>${i.nome}</td><td>${i.local}</td><td>${i.valor.toFixed(2)}</td><td>${i.perc}%</td><td>${ganho.toFixed(2)}</td><td><button onclick="editarInvest(${dados[mesAtual].investimentos.indexOf(i)})">Editar</button> <button onclick="excluirInvest(${dados[mesAtual].investimentos.indexOf(i)})">Excluir</button></td></tr>`;
+  });
+
+  resumoMes.innerHTML = `<strong>Resumo do Mês</strong><br>
+    Total Receitas: R$ ${totalReceitas.toFixed(2)}<br>
+    Total Gastos: R$ ${totalGastos.toFixed(2)}<br>
+    Ganhos com Investimentos: R$ ${totalGanhos.toFixed(2)}<br>
+    Saldo do Mês: R$ ${(totalReceitas - totalGastos).toFixed(2)}`;
+
+  atualizarGraficos(totalReceitas, totalGastos, totalGanhos);
+  resumoAno.innerHTML = gerarResumoAnual();
+}
+
+function gerarResumoAnual() {
+  let html = '<strong>Resumo Anual</strong><br>';
+  Object.keys(dados).forEach(m => {
+    let tg = dados[m].gastos.reduce((s,g)=>s+g.valor,0);
+    let ti = dados[m].investimentos.reduce((s,i)=>s+(i.valor*(i.perc/100)),0);
+    html += `${m}: Gastos R$ ${tg.toFixed(2)} | Ganhos R$ ${ti.toFixed(2)}<br>`;
+  });
+  return html;
+}
+
+function editarReceita(idx){const r=dados[mesAtual].receitas[idx];fonteReceita.value=r.fonte;valorReceita.value=r.valor;dados[mesAtual].receitas.splice(idx,1);salvar();render();}
+function excluirReceita(idx){dados[mesAtual].receitas.splice(idx,1);salvar();render();}
+function editarGasto(idx){const g=dados[mesAtual].gastos[idx];nomeGasto.value=g.nome;valorGasto.value=g.valor;tipoGasto.value=g.tipo;dados[mesAtual].gastos.splice(idx,1);salvar();render();}
+function excluirGasto(idx){dados[mesAtual].gastos.splice(idx,1);salvar();render();}
+function editarInvest(idx){const i=dados[mesAtual].investimentos[idx];nomeInvest.value=i.nome;localInvest.value=i.local;valorInvest.value=i.valor;percInvest.value=i.perc;dados[mesAtual].investimentos.splice(idx,1);salvar();render();}
+function excluirInvest(idx){dados[mesAtual].investimentos.splice(idx,1);salvar();render();}
+
+function atualizarGraficos(receita, gasto, invest) {
+  if (window.graficoGastos) graficoGastos.destroy();
+  if (window.graficoInvest) graficoInvest.destroy();
+
+  graficoGastos = new Chart(document.getElementById('graficoGastos'), {
+    type: 'bar',
+    data: { labels: ['Receitas', 'Gastos'], datasets: [{ data: [receita, gasto] }] }
+  });
+
+  graficoInvest = new Chart(document.getElementById('graficoInvest'), {
+    type: 'pie',
+    data: { labels: ['Ganhos Investimentos', 'Gastos'], datasets: [{ data: [invest, gasto] }] }
+  });
+}
+
+function salvar() {
+  localStorage.setItem('financas', JSON.stringify(dados));
+}
+</script>
+
+</body>
+</html>
