@@ -1,11 +1,158 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=escala.html">
-    <title>Redirecionando...</title>
+<meta charset="UTF-8">
+<title>Calendário de Folgas</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+.controls {
+  margin-bottom: 15px;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.day-header {
+  font-weight: bold;
+  text-align: center;
+}
+
+.day {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+  min-height: 60px;
+}
+
+.trabalho {
+  background-color: #d4edda;
+}
+
+.folga {
+  background-color: #f8d7da;
+}
+</style>
 </head>
+
 <body>
-    <p>Redirecionando para a escala... <a href="escala.html">Clique aqui</a> se não for redirecionado automaticamente.</p>
+
+<h2>Calendário de Trabalho / Folga</h2>
+
+<div class="controls">
+  <label>Mês:
+    <select id="mes">
+      <option value="0">Janeiro</option>
+      <option value="1">Fevereiro</option>
+      <option value="2">Março</option>
+      <option value="3">Abril</option>
+      <option value="4">Maio</option>
+      <option value="5">Junho</option>
+      <option value="6">Julho</option>
+      <option value="7">Agosto</option>
+      <option value="8">Setembro</option>
+      <option value="9">Outubro</option>
+      <option value="10">Novembro</option>
+      <option value="11">Dezembro</option>
+    </select>
+  </label>
+
+  <label>Ano:
+    <input type="number" id="ano" value="2026">
+  </label>
+
+  <button onclick="gerarCalendario()">Gerar</button>
+</div>
+
+<div class="calendar" id="calendario"></div>
+
+<script>
+// ==========================
+// DEFINIÇÃO DA ESCALA
+// ==========================
+
+// Semana 1
+const semana1 = [
+  "Trabalha", // Domingo
+  "Trabalha", // Segunda
+  "Folga",    // Terça
+  "Trabalha", // Quarta
+  "Folga",    // Quinta
+  "Folga",    // Sexta
+  "Trabalha"  // Sábado
+];
+
+// Semana 2
+const semana2 = [
+  "Folga",    // Domingo
+  "Folga",    // Segunda
+  "Trabalha", // Terça
+  "Folga",    // Quarta
+  "Trabalha", // Quinta
+  "Trabalha", // Sexta
+  "Folga"     // Sábado
+];
+
+// Dia base: 23/02/2026 (segunda-feira) = TRABALHO
+const dataBase = new Date(2026, 1, 23);
+
+const diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
+function gerarCalendario() {
+  const mes = parseInt(document.getElementById("mes").value);
+  const ano = parseInt(document.getElementById("ano").value);
+  const calendario = document.getElementById("calendario");
+
+  calendario.innerHTML = "";
+
+  // Cabeçalho
+  diasSemana.forEach(d => {
+    const div = document.createElement("div");
+    div.className = "day-header";
+    div.textContent = d;
+    calendario.appendChild(div);
+  });
+
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+
+  // Espaços vazios antes do primeiro dia
+  for (let i = 0; i < primeiroDia; i++) {
+    calendario.appendChild(document.createElement("div"));
+  }
+
+  // Dias do mês
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const dataAtual = new Date(ano, mes, dia);
+    const diffDias = Math.floor(
+      (dataAtual - dataBase) / (1000 * 60 * 60 * 24)
+    );
+
+    const semanaAtual = Math.floor(diffDias / 7) % 2 === 0 ? 1 : 2;
+    const diaSemana = dataAtual.getDay();
+    const status = semanaAtual === 1
+      ? semana1[diaSemana]
+      : semana2[diaSemana];
+
+    const div = document.createElement("div");
+    div.className = `day ${status === "Trabalha" ? "trabalho" : "folga"}`;
+
+    div.innerHTML = `
+      <strong>${dia}</strong><br>
+      ${status === "Trabalha" ? "Trabalho" : "Folga"}
+    `;
+
+    calendario.appendChild(div);
+  }
+}
+</script>
+
 </body>
 </html>
